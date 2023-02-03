@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"strings"
 )
 
 func main() {
@@ -17,20 +20,32 @@ func main() {
     panic(err)
   }
 
-  _, err = conn.Write([]byte("Hello, World!"))
-  if err != nil {
-    println("Couldn't send message.")
-    panic(err)
+  sendMessage(conn)
+  // go listenToMessages(conn)
+
+  for {}
+
+  // conn.Close()
+}
+
+func sendMessage(conn net.Conn) {
+  for {
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("-> ")
+    text, _ := reader.ReadString('\n')
+    text = strings.Replace(text, "\n", "", -1)
+    conn.Write([]byte(text))
   }
+}
 
-  reply := make([]byte, 1024)
-  _, err = conn.Read(reply)
-  if err != nil {
-    println("Read failed")
-    panic(err)
+func listenToMessages(conn net.Conn) {
+  for {
+    reply := make([]byte, 1024)
+    _, err := conn.Read(reply)
+    if err != nil {
+      println("Read failed")
+      panic(err)
+    }
+    fmt.Printf("Server echo: %s\n", string(reply))
   }
-
-  fmt.Printf("Server reply: %s\n", string(reply))
-
-  conn.Close()
 }
