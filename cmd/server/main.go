@@ -32,13 +32,13 @@ func main() {
 
 func onConnection(conn net.Conn) {
   for {
-    buf := make([]byte, 1024)
+    buf := make([]byte, 1)
     lenght, err := conn.Read(buf)
     if err != nil {
       fmt.Printf("Error reading: %#v\n", err)
       return
     }
-    fmt.Printf("Message received: %s\n", string(buf[:lenght]))
+    fmt.Printf("%s", string(buf[:lenght]))
     conn.Write(buf)
   }
 }
