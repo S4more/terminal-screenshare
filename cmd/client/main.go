@@ -11,53 +11,43 @@ import (
 	"golang.org/x/term"
 )
 
+// 3 -> Ctrl C
+// 4 -> Ctrl D
+
 func main() {
+  // Investigate : https://stackoverflow.com/questions/72765557/using-a-pty-without-a-command
   addr := "localhost:8080"
   tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	c := exec.Command("bash")
+  _, err = pty.Start(c)
+
   if err != nil {
     panic(err)
   }
+
+	if err != nil {
+		panic(err)
+	}
 
   conn, err := net.DialTCP("tcp", nil, tcpAddr)
   if err != nil {
     panic(err)
   }
 
-  ch := make(chan []byte)
   go listenToMessages(conn)
-  go startTerminal(ch)
 
-  for {
-    msg := <- ch
-    if len(msg) == 0 {
-      return
-    }
-    sendMessage(conn, msg)
-  }
-}
-
-func startTerminal(ch chan []byte) {
-	c := exec.Command("zsh")
-	terminalFile, err := pty.Start(c)
-	if err != nil {
-		panic(err)
-	}
-
-  defer func() { _ = terminalFile.Close() }() // Best effort.
-
-  // Set stdin in raw mode.
   oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
   if err != nil {
-          panic(err)
+    panic(err)
   }
   defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }() // Best effort.
-  go func() { _, _ = io.Copy(terminalFile, os.Stdin) }()
+  // go func() { _, _ = io.Copy(terminalFile, os.Stdin) }()
 
   for {
     var buf bytes.Buffer
-    writer := io.MultiWriter(os.Stdout, &buf)
-    io.CopyN(writer, terminalFile, 1)
-    ch <- buf.Bytes()
+    io.CopyN(&buf, os.Stdin, 1)
+    // fmt.Println(buf)
+    sendMessage(conn, buf.Bytes())
   }
 }
 
@@ -67,12 +57,12 @@ func sendMessage(conn net.Conn, data []byte) {
 
 func listenToMessages(conn net.Conn) {
   for {
-    reply := make([]byte, 1024)
+    reply := make([]byte, 1)
     _, err := conn.Read(reply)
     if err != nil {
-      println("Read failed")
       panic(err)
     }
-    // fmt.Printf("Server echo: %s\n", string(reply))
+    // fmt.Println(string(reply[:length]))
+    os.Stdout.Write(reply)
   }
 }
