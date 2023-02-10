@@ -16,7 +16,7 @@ import (
 
 func main() {
   // Investigate : https://stackoverflow.com/questions/72765557/using-a-pty-without-a-command
-  addr := "localhost:8080"
+  addr := os.Args[1]
   tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	c := exec.Command("bash")
   _, err = pty.Start(c)
